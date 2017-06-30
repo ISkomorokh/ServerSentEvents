@@ -1,38 +1,53 @@
-﻿using System;
-using System.IO;
+﻿using ServerSentEventsClient.Default;
+using System;
+using System.Threading;
 using System.Threading.Tasks;
-using ServerSentEventsClient.Default;
 
 namespace ServerSentEventsClient {
 
 	public class ServerSentEventsClient : IServerSentEventsClient {
 
-		private readonly string m_baseUri;
-		private readonly string m_eventStreamPath;
 		private readonly IEventStreamClient m_eventStreamClient;
 		private readonly IEventStreamProcessor m_eventStreamProcessor;
+		private CancellationTokenSource m_cts;
 
 		public ServerSentEventsClient( string baseUri, string eventStreamPath ) {
-			m_baseUri = baseUri;
-			m_eventStreamPath = eventStreamPath;
-			//m_eventStreamProcessor = eventStreamProcessor;
 			m_eventStreamClient = new EventStreamClient( new Uri( new Uri( baseUri ), eventStreamPath ) );
+			m_eventStreamProcessor = new EventStreamProcessor( new ServerSentEventsMessageParser() );
 		}
 
 		internal ServerSentEventsClient(
-			string baseUri,
-			string eventStreamPath,
 			IEventStreamClient eventStreamClient,
-			IEventStreamProcessor eventStreamProcessor ) {
-			m_baseUri = baseUri;
-			m_eventStreamPath = eventStreamPath;
+			IEventStreamProcessor eventStreamProcessor
+		) {
 			m_eventStreamClient = eventStreamClient;
 			m_eventStreamProcessor = eventStreamProcessor;
 		}
 
-		async Task IServerSentEventsClient.Start() {
-			var eventStream = await m_eventStreamClient.StartAsync().ConfigureAwait( false );
-			m_eventStreamProcessor.ProcessAsync( eventStream );
+		IServerSentEventsClient IServerSentEventsClient.Start() {
+
+			m_eventStreamClient.StartAsync()
+				.ContinueWith(
+					( task ) => {
+						m_cts = new CancellationTokenSource();
+						return m_eventStreamProcessor.ProcessAsync( task.Result, m_cts.Token );
+					},
+					TaskContinuationOptions.OnlyOnRanToCompletion
+				);
+
+			return this;
+		}
+
+		void IServerSentEventsClient.Stop() {
+			m_eventStreamClient?.Dispose();
+		}
+
+		void IDisposable.Dispose() {
+			if( m_cts != null && !m_cts.IsCancellationRequested ) {
+				m_cts.Cancel();
+			}
+
+			m_eventStreamClient?.Dispose();
 		}
 
 	}

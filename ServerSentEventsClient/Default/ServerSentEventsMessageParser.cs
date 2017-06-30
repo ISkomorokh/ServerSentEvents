@@ -13,7 +13,7 @@ namespace ServerSentEventsClient.Default {
 
 		private readonly StringBuilder m_lastChunk = new StringBuilder(); // TODO: Specify size
 
-		public IEnumerable<IServerSentEventsMessage> Parse( ArraySegment<byte> buffer ) {
+		IEnumerable<IServerSentEventsMessage> IServerSentEventsMessageParser.Parse( ArraySegment<byte> buffer ) {
 
 			int lineStart = buffer.Offset;
 			int currentPosition = lineStart;

@@ -1,10 +1,12 @@
-﻿using System.Threading.Tasks;
+﻿using System;
 
 namespace ServerSentEventsClient {
 
-	public interface IServerSentEventsClient {
+	public interface IServerSentEventsClient: IDisposable {
 
-		Task Start();
+		IServerSentEventsClient Start();
+
+		void Stop();
 
 	}
 

@@ -1,11 +1,15 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace ServerSentEventsClient {
 
 	internal interface IEventStreamProcessor {
 
-		Task ProcessAsync( Stream eventStream );
+		Action<IServerSentEventsMessage> OnMessage { get; set; }
+
+		Task ProcessAsync( Stream eventStream, CancellationToken cancellationToken );
 
 	}
 
