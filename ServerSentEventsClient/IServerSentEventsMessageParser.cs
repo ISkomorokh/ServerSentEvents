@@ -1,11 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace ServerSentEventsClient {
+namespace SSE {
 
 	internal interface IServerSentEventsMessageParser {
 
-		IEnumerable<IServerSentEventsMessage> Parse( ArraySegment<byte> buffer );
+		IEnumerable<ServerSentEventsMessage> Parse( ArraySegment<byte> buffer );
 
 	}
 

@@ -1,7 +1,7 @@
-﻿namespace ServerSentEventsClient.Default {
+﻿namespace SSE {
 
 	// TODO: Make it immutable
-	public class ServerSentEventsMessage : IServerSentEventsMessage {
+	public class ServerSentEventsMessage {
 
 		public string Id { get; set; }
 		public string Event { get; set; }

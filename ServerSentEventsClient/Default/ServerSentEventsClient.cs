@@ -1,9 +1,9 @@
-﻿using ServerSentEventsClient.Default;
-using System;
+﻿using System;
+using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace ServerSentEventsClient {
+namespace SSE {
 
 	public class ServerSentEventsClient : IServerSentEventsClient {
 
@@ -13,7 +13,7 @@ namespace ServerSentEventsClient {
 
 		public ServerSentEventsClient( string baseUri, string eventStreamPath ) {
 			m_eventStreamClient = new EventStreamClient( new Uri( new Uri( baseUri ), eventStreamPath ) );
-			m_eventStreamProcessor = new EventStreamProcessor( new ServerSentEventsMessageParser() );
+			m_eventStreamProcessor = new EventStreamProcessor( new MessageParser() );
 		}
 
 		internal ServerSentEventsClient(
@@ -24,22 +24,35 @@ namespace ServerSentEventsClient {
 			m_eventStreamProcessor = eventStreamProcessor;
 		}
 
-		IServerSentEventsClient IServerSentEventsClient.Start() {
+		Action<HttpClient> IServerSentEventsClient.Configure { get; set; }
 
-			m_eventStreamClient.StartAsync()
-				.ContinueWith(
-					( task ) => {
-						m_cts = new CancellationTokenSource();
-						return m_eventStreamProcessor.ProcessAsync( task.Result, m_cts.Token );
-					},
-					TaskContinuationOptions.OnlyOnRanToCompletion
-				);
+		Action<ServerSentEventsMessage> IServerSentEventsClient.OnMessage {
+			get => m_eventStreamProcessor.OnMessage;
+			set => m_eventStreamProcessor.OnMessage = value;
+		}
+
+		public Task<IServerSentEventsClient> Start() {
+			IServerSentEventsClient @this = this;
+			return @this.Start();
+		}
+
+		async Task<IServerSentEventsClient> IServerSentEventsClient.Start() {
+
+			IServerSentEventsClient @this = this;
+
+			@this.Configure?.Invoke( m_eventStreamClient.HttpClient );
+
+			var stream = await m_eventStreamClient.StartAsync().ConfigureAwait( false );
+
+			m_cts = new CancellationTokenSource();
+			m_eventStreamProcessor.ProcessAsync( stream, m_cts.Token );
 
 			return this;
 		}
 
 		void IServerSentEventsClient.Stop() {
-			m_eventStreamClient?.Dispose();
+			IServerSentEventsClient @this = this;
+			@this.Dispose();
 		}
 
 		void IDisposable.Dispose() {

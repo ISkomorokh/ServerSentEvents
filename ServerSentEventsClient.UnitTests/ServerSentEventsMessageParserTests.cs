@@ -3,9 +3,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using ServerSentEventsClient.Default;
 
-namespace ServerSentEventsClient.UnitTests {
+namespace SSE.UnitTests {
 
 	[TestFixture]
 	public class ServerSentEventsMessageParserTests {
@@ -14,7 +13,7 @@ namespace ServerSentEventsClient.UnitTests {
 
 		[SetUp]
 		public void SetUp() {
-			m_sut = new ServerSentEventsMessageParser();
+			m_sut = new MessageParser();
 		}
 
 		[TestCase( "data: Hello, World!\r\n\r\n" )]
@@ -24,9 +23,9 @@ namespace ServerSentEventsClient.UnitTests {
 		public void Parse_WhenDataIsFullAndCorrect_ReturnsOneMessage( string data ) {
 			byte[] bytes = Encoding.UTF8.GetBytes( data );
 
-			IEnumerable<IServerSentEventsMessage> messages = m_sut.Parse( new ArraySegment<byte>( bytes ) );
+			IEnumerable<ServerSentEventsMessage> messages = m_sut.Parse( new ArraySegment<byte>( bytes ) );
 
-			IServerSentEventsMessage serverSentEventsMessage = messages.Single();
+			ServerSentEventsMessage serverSentEventsMessage = messages.Single();
 			Assert.That( serverSentEventsMessage.Data, Is.EqualTo( "Hello, World!" ) );
 		}
 
@@ -40,9 +39,9 @@ namespace ServerSentEventsClient.UnitTests {
 		public void Parse_WhenDataIsIncompleteAndCorrect_ReturnsOneMessage( string data ) {
 			byte[] bytes = Encoding.UTF8.GetBytes( data );
 
-			IEnumerable<IServerSentEventsMessage> messages = m_sut.Parse( new ArraySegment<byte>( bytes ) );
+			IEnumerable<ServerSentEventsMessage> messages = m_sut.Parse( new ArraySegment<byte>( bytes ) );
 
-			IServerSentEventsMessage serverSentEventsMessage = messages.Single();
+			ServerSentEventsMessage serverSentEventsMessage = messages.Single();
 			Assert.That( serverSentEventsMessage.Data, Is.EqualTo( "Hello, World!" ) );
 		}
 

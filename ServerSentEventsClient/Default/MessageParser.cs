@@ -2,18 +2,18 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace ServerSentEventsClient.Default {
+namespace SSE {
 
 	// https://html.spec.whatwg.org/multipage/comms.html#sse-processing-model
-	internal class ServerSentEventsMessageParser : IServerSentEventsMessageParser {
+	internal class MessageParser : IServerSentEventsMessageParser {
 
 		private static byte ByteLF = 10;
 		private static byte ByteCR = 13;
-		private IServerSentEventsMessage m_parsedMessage;
+		private ServerSentEventsMessage m_parsedMessage;
 
 		private readonly StringBuilder m_lastChunk = new StringBuilder(); // TODO: Specify size
 
-		IEnumerable<IServerSentEventsMessage> IServerSentEventsMessageParser.Parse( ArraySegment<byte> buffer ) {
+		IEnumerable<ServerSentEventsMessage> IServerSentEventsMessageParser.Parse( ArraySegment<byte> buffer ) {
 
 			int lineStart = buffer.Offset;
 			int currentPosition = lineStart;

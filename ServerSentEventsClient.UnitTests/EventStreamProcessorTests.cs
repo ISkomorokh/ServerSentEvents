@@ -1,13 +1,12 @@
 ﻿using System.Collections.Generic;
 using FluentAssertions;
 using NUnit.Framework;
-using ServerSentEventsClient.Default;
 using System.IO;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace ServerSentEventsClient.UnitTests {
+namespace SSE.UnitTests {
 
 	[TestFixture]
 	internal sealed class EventStreamProcessorTests {
@@ -20,7 +19,7 @@ namespace ServerSentEventsClient.UnitTests {
 
 		[SetUp]
 		public void Setup() {
-			m_sut = new EventStreamProcessor( new ServerSentEventsMessageParser() );
+			m_sut = new EventStreamProcessor( new MessageParser() );
 		}
 
 		[Test]
@@ -31,7 +30,7 @@ namespace ServerSentEventsClient.UnitTests {
 		[Test]
 		public async Task ProcessAsync_OnMessageHandler_ExecutedOnce() {
 			int executionCount = 0;
-			IServerSentEventsMessage actrualMessage = null;
+			ServerSentEventsMessage actrualMessage = null;
 
 			m_sut.OnMessage = message => {
 				executionCount++;
@@ -50,7 +49,7 @@ namespace ServerSentEventsClient.UnitTests {
 
 		[Test]
 		public async Task ProcessAsync_OnMessageHandler_ExecutedTwice() {
-			var actual = new List<IServerSentEventsMessage>();
+			var actual = new List<ServerSentEventsMessage>();
 
 			m_sut.OnMessage = message => {
 				actual.Add( message );
@@ -62,7 +61,7 @@ namespace ServerSentEventsClient.UnitTests {
 				await m_sut.ProcessAsync( stream, CancellationToken.None );
 			}
 
-			var expected = new List<IServerSentEventsMessage> {
+			var expected = new List<ServerSentEventsMessage> {
 				new ServerSentEventsMessage { Data = "Hello, World!" },
 				new ServerSentEventsMessage { Data = "Good bye!" }
 			};

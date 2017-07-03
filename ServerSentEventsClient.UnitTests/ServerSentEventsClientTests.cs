@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using Moq;
 using NUnit.Framework;
 
-namespace ServerSentEventsClient.UnitTests {
+namespace SSE.UnitTests {
 
 	[TestFixture]
 	internal sealed class ServerSentEventsClientTests {
@@ -29,20 +29,21 @@ namespace ServerSentEventsClient.UnitTests {
 
 		[Test]
 		public void Start_WhenEventStreamClientFailedToStart_Throws() {
-			m_mockedEventStreamClient.Setup( c => c.StartAsync() ).Throws<Exception>();
+			m_mockedEventStreamClient.Setup( c => c.StartAsync() ).ThrowsAsync( new Exception() );
 
-			Assert.Throws<Exception>( () => m_sut.Start() );
+			m_sut.Start();
+
 			m_mockRepository.VerifyAll();
 		}
 
 		[Test]
-		public void Start_WhenEventStreamClientStartedSuccessfully_ReturnsSelf() {
+		public async Task Start_WhenEventStreamClientStartedSuccessfully_ReturnsSelf() {
 			var stream = new MemoryStream();
 
 			m_mockedEventStreamClient.Setup( c => c.StartAsync() ).ReturnsAsync( stream );
 			m_mockedEventStreamProcessor.Setup( p => p.ProcessAsync( stream, It.IsAny<CancellationToken>() ) ).Returns( Task.CompletedTask );
 
-			IServerSentEventsClient result = m_sut.Start();
+			IServerSentEventsClient result = await m_sut.Start();
 
 			Assert.That( result, Is.EqualTo( m_sut ) );
 			m_mockRepository.VerifyAll();

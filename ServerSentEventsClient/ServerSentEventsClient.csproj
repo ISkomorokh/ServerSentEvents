@@ -49,9 +49,8 @@
     <Compile Include="IEventStreamClient.cs" />
     <Compile Include="IEventStreamProcessor.cs" />
     <Compile Include="IServerSentEventsClient.cs" />
-    <Compile Include="IServerSentEventsMessage.cs" />
     <Compile Include="IServerSentEventsMessageParser.cs" />
-    <Compile Include="Default\ServerSentEventsMessageParser.cs" />
+    <Compile Include="Default\MessageParser.cs" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Properties\" />

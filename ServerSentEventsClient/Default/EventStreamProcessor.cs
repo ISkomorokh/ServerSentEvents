@@ -3,7 +3,7 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace ServerSentEventsClient.Default {
+namespace SSE {
 
 	internal class EventStreamProcessor : IEventStreamProcessor {
 
@@ -13,7 +13,7 @@ namespace ServerSentEventsClient.Default {
 			m_messageParser = messageParser;
 		}
 
-		public Action<IServerSentEventsMessage> OnMessage { get; set; }
+		public Action<ServerSentEventsMessage> OnMessage { get; set; }
 
 		async Task IEventStreamProcessor.ProcessAsync( Stream eventStream, CancellationToken cancellationToken ) {
 			int bufferSize = 1024 * 64;
@@ -23,15 +23,17 @@ namespace ServerSentEventsClient.Default {
 			while ( !endOfStream ) {
 				int count = await eventStream.ReadAsync( buffer, 0, bufferSize, cancellationToken )
 					.ConfigureAwait( false );
-				foreach ( var message in m_messageParser.Parse( new ArraySegment<byte>( buffer, 0, count ) ) ) {
-					PostMessage( message );
+
+				if( cancellationToken.IsCancellationRequested ) {
+					break;
 				}
+
+				foreach ( var message in m_messageParser.Parse( new ArraySegment<byte>( buffer, 0, count ) ) ) {
+					OnMessage?.Invoke( message );
+				}
+
 				endOfStream = count == 0;
 			}
-		}
-
-		private void PostMessage( IServerSentEventsMessage message ) {
-			OnMessage?.Invoke( message );
 		}
 
 	}

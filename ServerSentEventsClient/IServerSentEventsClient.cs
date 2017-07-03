@@ -1,10 +1,16 @@
 ﻿using System;
+using System.Net.Http;
+using System.Threading.Tasks;
 
-namespace ServerSentEventsClient {
+namespace SSE {
 
-	public interface IServerSentEventsClient: IDisposable {
+	public interface IServerSentEventsClient : IDisposable {
 
-		IServerSentEventsClient Start();
+		Action<HttpClient> Configure { get; set; }
+
+		Action<ServerSentEventsMessage> OnMessage { get; set; }
+
+		Task<IServerSentEventsClient> Start();
 
 		void Stop();
 
