@@ -45,7 +45,10 @@ namespace SSE {
 			var stream = await m_eventStreamClient.StartAsync().ConfigureAwait( false );
 
 			m_cts = new CancellationTokenSource();
+#pragma warning disable 4014
+			// Fire & forget
 			m_eventStreamProcessor.ProcessAsync( stream, m_cts.Token );
+#pragma warning restore 4014
 
 			return this;
 		}
