@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Immutable;
@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace SSE {
 
-	public class ServerSentEventsClient : IServerSentEventsClient {
+	public class ServerSentEventsClient: IServerSentEventsClient {
 
 		private readonly IEventStreamClient m_eventStreamClient;
 		private readonly IEventStreamProcessor m_eventStreamProcessor;
@@ -20,10 +20,12 @@ namespace SSE {
 		private readonly ILogger m_logger;
 		private CancellationTokenSource m_cts;
 
-		public ServerSentEventsClient( string baseUri, string eventStreamPath, ILoggerFactory loggerFactory ) {
-			m_eventStreamClient = new EventStreamClient( new Uri( new Uri( baseUri ), eventStreamPath ) );
-			m_eventStreamProcessor = new EventStreamProcessor( new MessageParser() );
-			m_logger = loggerFactory.CreateLogger<ServerSentEventsClient>();
+		public ServerSentEventsClient( string baseUri, ILoggerFactory loggerFactory ):
+			this(
+				new EventStreamClient( new Uri( baseUri, UriKind.Absolute ) ),
+				new EventStreamProcessor( new MessageParser() ),
+				loggerFactory
+			) {
 		}
 
 		internal ServerSentEventsClient(
@@ -31,23 +33,29 @@ namespace SSE {
 			IEventStreamProcessor eventStreamProcessor,
 			ILoggerFactory loggerFactory
 		) {
+			m_logger = loggerFactory.CreateLogger<ServerSentEventsClient>();
 			m_eventStreamClient = eventStreamClient;
 			m_eventStreamProcessor = eventStreamProcessor;
-			m_logger = loggerFactory.CreateLogger<ServerSentEventsClient>();
 		}
 
 		Action<HttpClient> IServerSentEventsClient.Configure { get; set; }
 
-		Action<ServerSentEventsMessage> IServerSentEventsClient.OnMessage {
-			get => m_eventStreamProcessor.OnMessage;
-			set => m_eventStreamProcessor.OnMessage = value;
-		}
+		Action<ServerSentEventsMessage> IServerSentEventsClient.OnMessage { get; set; }
 
 		async Task<IServerSentEventsClient> IServerSentEventsClient.Start() {
 
 			IServerSentEventsClient @this = this;
+			m_eventStreamProcessor.OnMessage = message =>
+			{
+				@this.OnMessage?.Invoke( message );
+				if( m_eventListeners.TryGetValue( message.Event, out var handlers ) ) {
+					foreach(var handler in handlers) {
+						handler.Invoke( message );
+					}
+				}
+			};
 
-			using ( m_logger.BeginScope( "Stratring SSE client" ) ) {
+			using( m_logger.BeginScope( "Stratring SSE client" ) ) {
 
 				m_logger.LogInformation( "Configuring HttpClient" );
 				@this.Configure?.Invoke( m_eventStreamClient.HttpClient );
@@ -57,7 +65,8 @@ namespace SSE {
 				Stream stream;
 				try {
 					stream = await m_eventStreamClient.StartAsync().ConfigureAwait( false );
-				} catch ( Exception e ) {
+				}
+				catch( Exception e ) {
 					m_logger.LogError( 0, e, "Failed to connect" );
 					throw;
 				}
@@ -75,10 +84,10 @@ namespace SSE {
 
 		void IServerSentEventsClient.AddEventListener( string @event, Action<ServerSentEventsMessage> handler ) {
 			if( string.IsNullOrWhiteSpace( @event ) ) {
-				throw new ArgumentNullException( nameof(@event) );
+				throw new ArgumentNullException( nameof( @event ) );
 			}
 			if( handler == null ) {
-				throw new ArgumentNullException( nameof(handler) );
+				throw new ArgumentNullException( nameof( handler ) );
 			}
 
 			m_eventListeners.AddOrUpdate(
@@ -90,10 +99,10 @@ namespace SSE {
 
 		void IServerSentEventsClient.RemoveEventListener( string @event, Action<ServerSentEventsMessage> handler ) {
 			if( string.IsNullOrWhiteSpace( @event ) ) {
-				throw new ArgumentNullException( nameof(@event) );
+				throw new ArgumentNullException( nameof( @event ) );
 			}
 			if( handler == null ) {
-				throw new ArgumentNullException( nameof(handler) );
+				throw new ArgumentNullException( nameof( handler ) );
 			}
 			if( m_eventListeners.TryGetValue( @event, out var handlers ) ) {
 				if( !m_eventListeners.TryUpdate( @event, handlers.Remove( handler ), handlers ) ) {
@@ -111,7 +120,7 @@ namespace SSE {
 			if( m_cts != null && !m_cts.IsCancellationRequested ) {
 				m_cts.Cancel();
 			}
-
+			m_eventStreamProcessor.OnMessage = null;
 			m_eventStreamClient?.Dispose();
 		}
 
