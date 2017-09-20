@@ -8,9 +8,13 @@ namespace SSE {
 
 		Action<HttpClient> Configure { get; set; }
 
+		Task<IServerSentEventsClient> Start();
+
 		Action<ServerSentEventsMessage> OnMessage { get; set; }
 
-		Task<IServerSentEventsClient> Start();
+		void AddEventListener( string @event, Action<ServerSentEventsMessage> handler );
+
+		void RemoveEventListener( string @event, Action<ServerSentEventsMessage> handler );
 
 		void Stop();
 
