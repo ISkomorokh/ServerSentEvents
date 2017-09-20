@@ -1,0 +1,8 @@
+language: csharp
+solution: ServerSentEventsClient.sln
+install:
+  - nuget restore ServerSentEventsClient.sln
+  - nuget install NUnit.Runners -Version 3.7.0 -OutputDirectory testrunner
+script:
+  - xbuild /p:Configuration=Release ServerSentEventsClient.sln
+  - mono ./testrunner/NUnit.Runners.3.7.0/tools/nunit-console.exe ./ServerSentEventsClient.UnitTests/bin/Release/ServerSentEventsClient.UnitTests.dll
